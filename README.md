@@ -1,56 +1,52 @@
-# Welcome to your Expo app 👋
+# 비전 보드 (MVP)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+비전 그림을 흑백에서 컬러로 채워가는 감사·행동 기록 앱.
+지금은 **웹앱**으로 먼저 써보고, 이후 **앱인토스(WebView)** 로 옮길 계획. 같은 Expo 코드로 iOS 앱(위젯 포함)도 빌드할 수 있다.
 
-## Get started
+## 구조
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+src/app/                 화면 (expo-router)
+  onboarding.tsx           나이대·성별 (한 번만)
+  vision.tsx               비전 5문항 → 프롬프트 → ChatGPT로 그림 생성 → 그림 고르기
+  (tabs)/index.tsx         오늘: 비전 그림 · 진행도 · 감사 · 행동 · 기록
+  (tabs)/history.tsx       히스토리
+  (tabs)/profile.tsx       프로필
+  api/vision+api.ts        서버: 비전 → 이미지 프롬프트 (Claude)
+  api/suggest+api.ts       서버: 오늘의 행동 제안 (Claude)
+src/server/claude.ts     Claude 호출 (서버 전용, API 키는 여기서만 사용)
+src/components/          VisionCanvas — 네이티브는 Skia, 웹은 2D 캔버스(.web.tsx)
+src/lib/
+  score.ts                 점수 규칙 (감사 1, 행동 2, 하루 최대 3, 누적, 100칸 공개 순서)
+  store.tsx                로컬 저장 (웹: localStorage)
+  image(.web).ts           비전 그림 저장
+  widget(.web).ts          iOS 위젯 동기화 (웹은 없음)
+targets/widget/          iOS 위젯 (SwiftUI) — 나중에 네이티브 앱 만들 때 사용
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 로컬 실행
 
-### Other setup steps
+```bash
+npm install
+cp .env.example .env     # ANTHROPIC_API_KEY 입력 (없으면 기본 템플릿으로 동작)
+npx expo start --web
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+같은 와이파이의 아이폰에서 `http://<PC IP>:8081` 로 열어볼 수 있다.
 
-## Learn more
+## 배포 (EAS Hosting)
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+npm install -g eas-cli
+eas login
+npx expo export --platform web
+eas deploy --prod
+eas env:create --name ANTHROPIC_API_KEY --environment production --visibility secret
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+배포된 주소를 아이폰 사파리에서 열고 **공유 → 홈 화면에 추가**. 기록은 그 브라우저에 저장되므로 항상 홈 화면 아이콘으로 연다
+(사파리 탭으로만 쓰면 오래 안 쓸 때 저장소가 지워질 수 있다).
 
-## Join the community
+## iOS 앱 (나중에)
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+`app.json`에 `ios.appleTeamId`를 넣고 `eas build --profile development --platform ios`. 자세한 건 `targets/widget` 참고.
