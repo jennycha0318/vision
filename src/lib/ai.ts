@@ -1,3 +1,4 @@
+import { accessToken } from './supabase';
 import { FALLBACK_ACTIONS, templateVision, type VisionDraft } from './templates';
 import type { Profile } from './types';
 
@@ -7,9 +8,10 @@ const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? '';
 export type Drafted = VisionDraft & { source: 'ai' | 'template' };
 
 async function post<T>(path: string, body: unknown): Promise<T> {
+  const token = await accessToken();
   const res = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`${path} ${res.status}`);

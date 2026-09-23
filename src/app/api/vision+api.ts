@@ -1,7 +1,11 @@
+import { requireUser } from '@/server/auth';
 import { aiConfigured, draftVision } from '@/server/claude';
 import { templateVision } from '@/lib/templates';
 
 export async function POST(request: Request) {
+  const denied = await requireUser(request);
+  if (denied) return denied;
+
   const { answers, profile } = await request.json();
   if (!Array.isArray(answers) || !profile) {
     return Response.json({ error: 'answers와 profile이 필요해요' }, { status: 400 });

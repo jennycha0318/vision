@@ -8,10 +8,10 @@ import { confirm } from '@/lib/dialog';
 import { useStore } from '@/lib/store';
 
 export default function ProfileScreen() {
-  const { state, reset } = useStore();
+  const { state, reset, email, signOut } = useStore();
 
   const confirmReset = async () => {
-    if (await confirm('모든 데이터를 지울까요?', '비전과 기록이 모두 사라지고 되돌릴 수 없어요.', '지우기')) reset();
+    if (await confirm('모든 데이터를 지울까요?', '비전과 기록이 모두 사라지고 되돌릴 수 없어요.', '지우기')) await reset();
   };
 
   return (
@@ -44,7 +44,9 @@ export default function ProfileScreen() {
           </Card>
         )}
 
-        <Card title="앱 정보">
+        <Card title="계정">
+          {email && <Row label="이메일" value={email} />}
+          {email && <Button title="로그아웃" variant="secondary" onPress={signOut} />}
           <Button title="모든 데이터 지우기" variant="ghost" onPress={confirmReset} />
         </Card>
       </ScrollView>

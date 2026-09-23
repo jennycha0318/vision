@@ -1,4 +1,5 @@
 import * as ImagePicker from 'expo-image-picker';
+import { IMAGE_BUCKET, supabase } from './supabase';
 
 import type { PickedImage } from './image';
 
@@ -46,4 +47,31 @@ export async function persistVisionImage(picked: PickedImage, visionId: string):
 
 export function visionImageUri(fileName: string): string {
   return localStorage.getItem(KEY_PREFIX + fileName) ?? '';
+}
+
+// ───────────── Supabase Storage 동기화 ─────────────
+
+const storagePath = (userId: string, fileName: string) => `${userId}/${fileName}`;
+
+export async function uploadVisionImage(userId: string, fileName: string): Promise<void> {
+  if (!supabase) return;
+  const blob = await (await fetch(visionImageUri(fileName))).blob();
+  const { error } = await supabase.storage
+    .from(IMAGE_BUCKET)
+    .upload(storagePath(userId, fileName), blob, { contentType: 'image/jpeg', upsert: true });
+  if (error) throw new Error(`그림 업로드: ${error.message}`);
+}
+
+/** 다른 기기나 브라우저에서 로그인했을 때, 서버의 그림을 받아 로컬에 둔다 */
+export async function ensureVisionImage(userId: string, fileName: string): Promise<void> {
+  if (!supabase || localStorage.getItem(KEY_PREFIX + fileName)) return;
+  const { data, error } = await supabase.storage.from(IMAGE_BUCKET).download(storagePath(userId, fileName));
+  if (error || !data) throw new Error(`그림 내려받기: ${error?.message}`);
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(data);
+  });
+  localStorage.setItem(KEY_PREFIX + fileName, dataUrl);
 }

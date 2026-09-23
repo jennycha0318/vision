@@ -14,11 +14,14 @@ src/app/                 화면 (expo-router)
   (tabs)/profile.tsx       프로필
   api/vision+api.ts        서버: 비전 → 이미지 프롬프트 (Claude)
   api/suggest+api.ts       서버: 오늘의 행동 제안 (Claude)
-src/server/claude.ts     Claude 호출 (서버 전용, API 키는 여기서만 사용)
+src/server/              서버 전용: claude.ts(Claude 호출), auth.ts(로그인 확인)
+supabase/migrations/     DB 스키마 + RLS
+api/index.js, vercel.json  Vercel 배포
 src/components/          VisionCanvas — 네이티브는 Skia, 웹은 2D 캔버스(.web.tsx)
 src/lib/
   score.ts                 점수 규칙 (감사 1, 행동 2, 하루 최대 3, 누적, 100칸 공개 순서)
-  store.tsx                로컬 저장 (웹: localStorage)
+  store.tsx                상태 관리. Supabase 있으면 클라우드, 없으면 기기에만 저장
+  remote.ts / supabase.ts  Supabase 테이블 읽기·쓰기
   image(.web).ts           비전 그림 저장
   widget(.web).ts          iOS 위젯 동기화 (웹은 없음)
 targets/widget/          iOS 위젯 (SwiftUI) — 나중에 네이티브 앱 만들 때 사용
@@ -28,24 +31,30 @@ targets/widget/          iOS 위젯 (SwiftUI) — 나중에 네이티브 앱 만
 
 ```bash
 npm install
-cp .env.example .env     # ANTHROPIC_API_KEY 입력 (없으면 기본 템플릿으로 동작)
+cp .env.example .env     # 키를 채운다. 비워두면 로컬 모드 + 기본 템플릿으로 동작
 npx expo start --web
 ```
 
 같은 와이파이의 아이폰에서 `http://<PC IP>:8081` 로 열어볼 수 있다.
 
-## 배포 (EAS Hosting)
+## 배포 (GitHub → Vercel, 데이터는 Supabase)
 
-```bash
-npm install -g eas-cli
-eas login
-npx expo export --platform web
-eas deploy --prod
-eas env:create --name ANTHROPIC_API_KEY --environment production --visibility secret
-```
+GitHub 에 푸시하면 Vercel이 자동으로 빌드·배포한다 (, ).
 
-배포된 주소를 아이폰 사파리에서 열고 **공유 → 홈 화면에 추가**. 기록은 그 브라우저에 저장되므로 항상 홈 화면 아이콘으로 연다
-(사파리 탭으로만 쓰면 오래 안 쓸 때 저장소가 지워질 수 있다).
+### Supabase (한 번만)
+1. 새 프로젝트 생성
+2. SQL Editor에서  실행 (테이블·RLS·그림 저장소)
+3. Authentication → Emails → **Magic Link** 템플릿 본문에  추가 (앱은 링크가 아니라 코드로 로그인)
+4. Project Settings → API에서 URL과 publishable(anon) 키 확인
+
+### Vercel (한 번만)
+1. Add New → Project → GitHub  가져오기 (Framework: Other, 설정은 vercel.json이 담당)
+2. Environment Variables: , , 3. Deploy
+
+배포된 주소를 아이폰 사파리에서 열고 **공유 → 홈 화면에 추가**. 이메일 코드로 로그인하면 기록은 Supabase에 저장된다.
+Claude API 라우트는 로그인한 사용자만 호출할 수 있다.
+
+가 없으면 로그인 없이 기기(localStorage)에만 저장하는 로컬 모드로 동작한다.
 
 ## iOS 앱 (나중에)
 

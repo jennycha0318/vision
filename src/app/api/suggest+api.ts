@@ -1,7 +1,11 @@
+import { requireUser } from '@/server/auth';
 import { aiConfigured, suggestActions } from '@/server/claude';
 import { FALLBACK_ACTIONS } from '@/lib/templates';
 
 export async function POST(request: Request) {
+  const denied = await requireUser(request);
+  if (denied) return denied;
+
   const { vision, recent } = await request.json();
   if (!vision?.summary) {
     return Response.json({ error: 'vision이 필요해요' }, { status: 400 });
