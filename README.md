@@ -39,22 +39,23 @@ npx expo start --web
 
 ## 배포 (GitHub → Vercel, 데이터는 Supabase)
 
-GitHub 에 푸시하면 Vercel이 자동으로 빌드·배포한다 (, ).
+GitHub `main`에 푸시하면 Vercel이 자동으로 빌드·배포한다 (`vercel.json`, `api/index.js`).
 
 ### Supabase (한 번만)
 1. 새 프로젝트 생성
-2. SQL Editor에서  실행 (테이블·RLS·그림 저장소)
-3. Authentication → Emails → **Magic Link** 템플릿 본문에  추가 (앱은 링크가 아니라 코드로 로그인)
+2. SQL Editor에서 `supabase/migrations/20260923000000_init.sql` 실행 (테이블·RLS·그림 저장소)
+3. Authentication → Emails → **Magic Link** 템플릿 본문에 `{{ .Token }}` 추가 (앱은 링크가 아니라 코드로 로그인)
 4. Project Settings → API에서 URL과 publishable(anon) 키 확인
 
 ### Vercel (한 번만)
-1. Add New → Project → GitHub  가져오기 (Framework: Other, 설정은 vercel.json이 담당)
-2. Environment Variables: , , 3. Deploy
+1. Add New → Project → GitHub `jennycha0318/vision` 가져오기 (Framework: Other, 설정은 vercel.json이 담당)
+2. Environment Variables: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_KEY`, `ANTHROPIC_API_KEY`
+3. Deploy
 
 배포된 주소를 아이폰 사파리에서 열고 **공유 → 홈 화면에 추가**. 이메일 코드로 로그인하면 기록은 Supabase에 저장된다.
 Claude API 라우트는 로그인한 사용자만 호출할 수 있다.
 
-가 없으면 로그인 없이 기기(localStorage)에만 저장하는 로컬 모드로 동작한다.
+`EXPO_PUBLIC_SUPABASE_*`가 없으면 로그인 없이 기기(localStorage)에만 저장하는 로컬 모드로 동작한다.
 
 ## iOS 앱 (나중에)
 
